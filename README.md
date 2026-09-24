@@ -1,3 +1,24 @@
+<img src="./goose_icon.png" alt="Architecture diagram" width="300">
+
+# VM GOOSE
+
+<br><br><br>
+Meet VM Goose — a little goose with a whole Ubuntu desktop hiding in the cloud.
+
+VM Goose does the heavy lifting. He sets up an Ubuntu 24.04 virtual machine in AWS, installs an XFCE desktop and Firefox, and gets everything ready for remote access over RDP.
+
+VM Goose also keeps things tucked away safely — only your IP address is allowed through, so random internet visitors are politely kept out of the nest.
+
+In short:
+
+**You provide the updates in the Terraform code.**
+**AWS provides the cloud.** ☁️
+**VM Goose provides the desktop.** 🪿
+
+Deploy it, connect to it, and enjoy your very own cloud-based goose-powered workstation.
+
+<br><br><br>
+
 # AWS Browser VM (Terraform)
 
 Creates an Ubuntu 24.04 virtual machine in AWS with an XFCE desktop and Firefox.
