@@ -1,0 +1,77 @@
+#!/bin/bash
+###############################################################################
+# user_data.sh.tftpl
+# -----------------------------------------------------------------------------
+# Runs ONCE as root on the VM's first boot (EC2 "user data").
+# Terraform's templatefile() replaces the placeholders written as
+# dollar-brace-username and dollar-brace-password before the script is sent to AWS.
+#
+# Progress / errors are logged to:  /var/log/user-data.log
+# (Check it via SSM Session Manager:  sudo tail -f /var/log/user-data.log)
+#
+# Setup takes about 5-10 minutes after the instance starts.
+###############################################################################
+
+set -euxo pipefail
+exec > >(tee /var/log/user-data.log) 2>&1
+
+export DEBIAN_FRONTEND=noninteractive
+
+# --- 1. Update the OS --------------------------------------------------------
+apt-get update -y
+apt-get upgrade -y
+
+# --- 2. Install the XFCE desktop ---------------------------------------------
+# XFCE is lightweight and works well over RDP (GNOME does not).
+apt-get install -y xfce4 xfce4-goodies dbus-x11 wget gpg
+
+# --- 3. Install Firefox from Mozilla's official APT repository ---------------
+# Ubuntu's default Firefox is a "snap" package, which often fails to start
+# inside an RDP session. Mozilla's .deb package avoids that problem.
+install -d -m 0755 /etc/apt/keyrings
+wget -q https://packages.mozilla.org/apt/repo-signing-key.gpg -O /etc/apt/keyrings/packages.mozilla.org.asc
+echo "deb [signed-by=/etc/apt/keyrings/packages.mozilla.org.asc] https://packages.mozilla.org/apt mozilla main" \
+  > /etc/apt/sources.list.d/mozilla.list
+
+# Prefer Mozilla's package over Ubuntu's snap wrapper package.
+cat > /etc/apt/preferences.d/mozilla <<'EOF'
+Package: *
+Pin: origin packages.mozilla.org
+Pin-Priority: 1000
+EOF
+
+apt-get update -y
+apt-get install -y firefox
+
+# --- 4. Install xrdp (Remote Desktop server) ---------------------------------
+apt-get install -y xrdp
+# xrdp needs to read the TLS certificate key, which belongs to the ssl-cert group.
+adduser xrdp ssl-cert
+
+# --- 5. Create the desktop login user ----------------------------------------
+if ! id "${username}" >/dev/null 2>&1; then
+  useradd --create-home --shell /bin/bash "${username}"
+fi
+echo "${username}:${password}" | chpasswd
+# Give the user sudo rights (remove this line if you don't want that).
+usermod -aG sudo "${username}"
+
+# Tell xrdp to start XFCE for this user.
+echo "xfce4-session" > "/home/${username}/.xsession"
+chown "${username}:${username}" "/home/${username}/.xsession"
+
+# Put a Firefox shortcut on the user's desktop.
+mkdir -p "/home/${username}/Desktop"
+cp /usr/share/applications/firefox.desktop "/home/${username}/Desktop/"
+chmod +x "/home/${username}/Desktop/firefox.desktop"
+chown -R "${username}:${username}" "/home/${username}/Desktop"
+
+# --- 6. Start xrdp and enable it on every boot -------------------------------
+systemctl enable xrdp
+systemctl restart xrdp
+
+# --- 7. Enable automatic security updates ------------------------------------
+apt-get install -y unattended-upgrades
+dpkg-reconfigure -f noninteractive unattended-upgrades
+
+echo "=== Browser VM setup complete ==="

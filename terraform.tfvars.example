@@ -1,0 +1,37 @@
+###############################################################################
+# terraform.tfvars.example
+# -----------------------------------------------------------------------------
+# 1. Copy this file:   cp terraform.tfvars.example terraform.tfvars
+# 2. Edit the values marked  <-- UPDATE  below.
+# 3. terraform.tfvars is read automatically by `terraform plan/apply`.
+#    Don't commit terraform.tfvars to git.
+###############################################################################
+
+# <-- UPDATE: your 12-digit AWS account ID.
+#     Find it with:  aws sts get-caller-identity --query Account --output text
+#     or in the AWS Console (click your name, top right).
+aws_account_id = "123456789012"
+
+# <-- UPDATE: the region you want the VM in.
+aws_region = "eu-west-2"
+
+# <-- UPDATE: the AWS CLI profile that holds your credentials
+#     (see ~/.aws/config). Delete this line or set it to null to use the
+#     default credentials / environment variables.
+aws_profile = "default"
+
+# <-- UPDATE: your public IP address with /32 at the end.
+#     Find it with:  curl -s https://checkip.amazonaws.com
+#     If your home IP changes, update this and run `terraform apply` again.
+allowed_rdp_cidrs = ["203.0.113.25/32"]
+
+# <-- UPDATE (optional): used for the Owner tag.
+owner = "your-name@example.com"
+
+# Optional overrides - the defaults in variables.tf are fine to start with.
+# project_name        = "browser-vm"
+# instance_type       = "t3.medium"
+# root_volume_size_gb = 30
+# desktop_username    = "browseruser"
+# vpc_cidr            = "10.20.0.0/16"
+# public_subnet_cidr  = "10.20.1.0/24"
