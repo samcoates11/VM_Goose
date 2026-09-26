@@ -126,3 +126,42 @@ terraform destroy
     --parameters '{"portNumber":["3389"],"localPortNumber":["13389"]}'
   ```
   Then connect your RDP client to `localhost:13389`.
+
+
+  1. Create the VM first (if you haven't)
+
+brew install hashicorp/tap/terraform
+cd ~/Desktop/VM_Goose/VM_Goose
+terraform init
+terraform workspace select -or-create eu-north-1   # or "default" for London
+terraform apply                                    # type "yes"
+Then wait 5–10 minutes while it installs the desktop and Firefox.
+
+2. Get your login details
+
+terraform output rdp_address              # e.g. 13.48.x.x:3389
+terraform output desktop_username         # browseruser
+terraform output -raw desktop_password    # copy this
+3. Install Windows App on your Mac
+Get Windows App (by Microsoft) from the Mac App Store. It's free, and it's the new name for "Microsoft Remote Desktop".
+
+4. Add the VM in Windows App
+Open Windows App and click + at the top, then Add PC.
+In PC name, paste the rdp_address, e.g. 13.48.x.x:3389.
+In Credentials, choose Add Credentials. Enter browseruser and the password, then click Add.
+In Friendly name, enter something like VM Stockholm.
+Click Add.
+5. Connect
+Double-click the PC tile.
+A certificate warning appears. Click Continue. This is expected because the VM uses a self-signed certificate.
+The XFCE desktop opens. Double-click Firefox.
+To end your session, close the Windows App window or choose Log Out from the menu at the top right of the desktop. After that, stop the VM so you're not paying for it while it's idle (Step 5 in the README).
+
+If it won't connect
+"Can't connect" or a timeout: your IP has probably changed or doesn't match allowed_rdp_cidrs. Check it with curl -s https://checkip.amazonaws.com, update terraform.tfvars, then run terraform apply. If you're on a VPN, the IP it shows is the VPN's, so RDP will only work while the VPN is on.
+Connects, then shows a black screen or disconnects straight away: setup probably hasn't finished yet. Wait a few more minutes.
+The VM is stopped: start it first with the start command from Step 5 in the README.
+Still stuck: open a shell on the VM. This needs the Session Manager plugin: brew install --cask session-manager-plugin.
+
+$(terraform output -raw ssm_shell_command) --profile Default
+sudo tail -f /var/log/user-data.log   # look for "Browser VM setup complete"
